@@ -52,7 +52,7 @@ def reminder_times(category: str, start: datetime) -> list[datetime]:
     """start is the event start, or the due time for Uni deadlines."""
     if category == "Uni":
         return [start - timedelta(days=14), at_20(start.date() - timedelta(days=3))]
-    if category == "Social":
+    if category in ("Sport", "Social"):
         return [at_20(start.date() - timedelta(days=1)), start - timedelta(hours=2)]
     return [at_20(start.date() - timedelta(days=1))]  # Work and PPI: the night before
 

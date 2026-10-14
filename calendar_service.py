@@ -17,7 +17,7 @@ from config import HERE
 SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 CREDENTIALS = HERE / "credentials.json"
 TOKEN = HERE / "token.json"
-COLORS = {"Uni": "9", "Work": "6", "PPI": "10", "Social": "5"}  # blueberry, tangerine, basil, banana
+COLORS = {"Uni": "9", "Work": "6", "PPI": "10", "Sport": "7", "Social": "5"}  # blueberry, tangerine, basil, peacock, banana
 HOLIDAY_CALENDAR = "en.indonesian#holiday@group.v.calendar.google.com"  # the subscribed "Holidays in Indonesia"
 
 

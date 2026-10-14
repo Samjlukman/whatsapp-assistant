@@ -18,6 +18,7 @@ assert reminder_times("Work", exam) == [datetime(2026, 12, 9, 20, 0, tzinfo=TZ)]
 assert reminder_times("PPI", exam) == [datetime(2026, 12, 9, 20, 0, tzinfo=TZ)]
 club = datetime(2026, 12, 11, 21, 0, tzinfo=TZ)
 assert reminder_times("Social", club) == [datetime(2026, 12, 10, 20, 0, tzinfo=TZ), datetime(2026, 12, 11, 19, 0, tzinfo=TZ)]
+assert reminder_times("Sport", club) == reminder_times("Social", club)
 # every category the model can return needs a calendar colour
 assert set(COLORS) == set(get_args(get_args(Intake.model_fields["Category"].annotation)[0]))
 
