@@ -18,6 +18,7 @@ SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 CREDENTIALS = HERE / "credentials.json"
 TOKEN = HERE / "token.json"
 COLORS = {"Uni": "9", "Work": "6", "PPI": "10", "Social": "5"}  # blueberry, tangerine, basil, banana
+HOLIDAY_CALENDAR = "en.indonesian#holiday@group.v.calendar.google.com"  # the subscribed "Holidays in Indonesia"
 
 
 class CalendarError(Exception):
@@ -64,6 +65,15 @@ def update_event(event_id, name, category, start, end) -> str:
     except HttpError as e:
         raise CalendarError(f"Google Calendar refused the update: {e.reason}") from e
     return ev["htmlLink"]
+
+
+def list_events(calendar_id: str, start: datetime, end: datetime) -> list[dict]:
+    """Events overlapping [start, end), repeating events expanded, in start order."""
+    try:
+        return _service().events().list(calendarId=calendar_id, timeMin=start.isoformat(), timeMax=end.isoformat(),
+                                        singleEvents=True, orderBy="startTime").execute().get("items", [])
+    except HttpError as e:
+        raise CalendarError(f"Google Calendar refused to list events: {e.reason}") from e
 
 
 def delete_event(event_id) -> None:

@@ -50,9 +50,13 @@ Uninstall: delete `WhatsApp assistant` from the Startup folder (Win+R, `shell:st
 - `what's on this week?`
 - `never mind` drops whatever the bot is waiting on.
 
+Every morning at 8:00 the bot sends today's agenda from Google Calendar (main calendar plus Holidays in
+Indonesia), `[Uni]` events in the next 7 days, and any new holiday-planning alerts. If the PC was off at 8:00, it
+goes out once the bot is back that day.
+
 ## Files
 
 `main.py` (FastAPI + message flow), `agents.py` (Qwen intake), `calendar_service.py`, `scheduler.py`
-(reminder rules + holiday check), `db_models.py`, `whatsapp_bridge.js`, `holidays.json` (update yearly),
+(reminder rules + morning recap), `db_models.py`, `whatsapp_bridge.js`, `holidays.json` (update yearly),
 `test_logic.py` (run it after changing date logic). State lives in `assistant.db`; don't commit it,
 `token.json`, `credentials.json`, `owner_number.txt` or `.wwebjs_auth/` (all in `.gitignore`).

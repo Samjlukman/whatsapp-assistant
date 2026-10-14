@@ -1,4 +1,4 @@
-"""Scheduler agent: reminder rules, the persistent job queue, and the daily holiday check."""
+"""Scheduler agent: reminder rules, the persistent job queue, and the morning recap (with holiday alerts)."""
 import json
 import logging
 from datetime import date, datetime, time, timedelta
@@ -8,8 +8,9 @@ from apscheduler.jobstores.base import JobLookupError
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
 
+import calendar_service as cal
 from config import BRIDGE_SECRET, BRIDGE_URL, HERE, TZ
-from db_models import HolidayNotification, Session, engine
+from db_models import EventHistory, HolidayNotification, Session, engine
 
 log = logging.getLogger(__name__)
 
@@ -99,23 +100,78 @@ def due_holidays(holidays: list[dict], today: date) -> list[tuple[str, str, int]
     return out
 
 
-def check_holidays() -> None:
+def recap_text(today: date, events: list[dict], deadline_ids: set[str]) -> str:
+    """Today's agenda plus Uni events in the next 7 days. events: Google Calendar events from today to 7 days
+    ahead, from every calendar the recap reads; deadline_ids: Google ids of events the bot stored as deadlines."""
+    all_day, timed, uni = [], [], []
+    for ev in events:
+        if any(a.get("self") and a.get("responseStatus") == "declined" for a in ev.get("attendees", [])):
+            continue
+        name = ev.get("summary", "(no title)")
+        if "date" in ev["start"]:  # all-day; the end date is exclusive
+            if date.fromisoformat(ev["start"]["date"]) <= today < date.fromisoformat(ev["end"]["date"]):
+                all_day.append(f"• All day: {name}")
+            continue
+        start = datetime.fromisoformat(ev["start"]["dateTime"]).astimezone(TZ)
+        end = datetime.fromisoformat(ev["end"]["dateTime"]).astimezone(TZ)
+        due = ev["id"] in deadline_ids
+        at = end if due else start  # a deadline is shown and sorted by its due time
+        when = f"{end:%H:%M}" if due else f"{start:%H:%M}–{end:%H:%M}"
+        suffix = " (due)" if due else ""
+        if at.date() == today:  # not < today: last night's late finish isn't listed again
+            timed.append((at, f"• {when} {name}{suffix}"))
+        elif name.startswith("[Uni]") and today < at.date() <= today + timedelta(days=7):
+            uni.append((at, f"• {at:%a %d %b} {when} {name.removeprefix('[Uni]').strip()}{suffix}"))
+    lines = [f"☀️ Today's agenda: {today:%a %d %b}", *all_day, *(text for _, text in sorted(timed))]
+    if len(lines) == 1:
+        lines.append("Nothing scheduled today.")
+    if uni:
+        lines += ["", "📚 Uni in the next 7 days", *(text for _, text in sorted(uni))]
+    return "\n".join(lines)
+
+
+def send_recap(day: date | None = None) -> None:
+    """The 8am message. On a failed send, retries every 5 minutes until the day is over (day is set on retries)."""
+    today = datetime.now(TZ).date()
+    if day and day != today:
+        log.error("Gave up on the recap for %s: the day is over", day)
+        return
     holidays = json.loads((HERE / "holidays.json").read_text(encoding="utf-8"))["holidays"]
-    for name, day, days in due_holidays(holidays, datetime.now(TZ).date()):
-        key = f"{name}|{day}"
-        with Session() as s:
-            if s.get(HolidayNotification, key):
-                continue
-            away = "6 weeks" if days == 42 else f"{days} days"
-            # Send first, record after: a failed send is retried on the next check.
-            send_whatsapp(f"Reminder: {name} is {away} away! It's time to start planning a PPI event.")
-            s.add(HolidayNotification(key=key))
-            s.commit()
+    with Session() as s:
+        alerts = [(name, d, days) for name, d, days in due_holidays(holidays, today)
+                  if not s.get(HolidayNotification, f"{name}|{d}")]
+        deadline_ids = {e.google_calendar_event_id for e in s.query(EventHistory).filter(EventHistory.start == EventHistory.end)}
+    try:
+        t0 = datetime.combine(today, time(0), tzinfo=TZ)
+        events = [ev for cal_id in ("primary", cal.HOLIDAY_CALENDAR)
+                  for ev in cal.list_events(cal_id, t0, t0 + timedelta(days=8))]
+        text = recap_text(today, events, deadline_ids)
+    except Exception as e:  # still send the holiday alerts, and say why the agenda is missing
+        log.exception("Recap couldn't read Google Calendar")
+        text = f"☀️ Today's agenda: {today:%a %d %b}\nCouldn't read Google Calendar ({e})."
+    for name, _, days in alerts:
+        away = "6 weeks" if days == 42 else f"{days} days"
+        text += f"\n\n🎉 {name} is {away} away! It's time to start planning a PPI event."
+    try:
+        send_whatsapp(text)
+    except Exception as e:
+        log.warning("Recap send failed (%s); retrying in 5 minutes", e)
+        scheduler.add_job(send_recap, "date", run_date=datetime.now(TZ) + timedelta(minutes=5), args=[today])
+        return
+    with Session() as s:  # record after sending, so an alert in a failed recap goes out with the retry
+        s.add_all(HolidayNotification(key=f"{name}|{d}") for name, d, _ in alerts)
+        s.commit()
 
 
 def start() -> None:
     scheduler.start()
-    scheduler.add_job(check_holidays, "cron", hour=9, id="holiday_check", replace_existing=True)
-    # Also check shortly after startup (gives the WhatsApp bridge time to connect) to catch days the PC was off.
-    scheduler.add_job(check_holidays, "date", run_date=datetime.now(TZ) + timedelta(minutes=2),
-                      id="holiday_check_startup", replace_existing=True)
+    # Added once, never replaced: the stored next run time is what makes a recap missed while the PC was off go out
+    # on startup (until midnight, via the grace time).
+    # shortcut: changing hour= has no effect on an existing DB until the "recap" job is deleted; compare triggers if it changes often.
+    if not scheduler.get_job("recap"):
+        scheduler.add_job(send_recap, "cron", hour=8, id="recap", misfire_grace_time=16 * 3600)
+    for old in ("holiday_check", "holiday_check_startup"):  # the 9am holiday check is now part of the recap
+        try:
+            scheduler.remove_job(old)
+        except JobLookupError:
+            pass
