@@ -19,7 +19,7 @@ log = logging.getLogger("assistant")
 FIELDS = ["Event_Name", "Date", "Time", "End_Time", "Category", "Is_Deadline"]
 EDITABLE = ["Event_Name", "Date", "Time", "End_Time", "Category"]
 ASK = {"Event_Name": "a name for it", "Date": "the date", "Time": "the time (start, or due time)",
-       "End_Time": "the end time", "Category": "the category (Uni, Work or PPI)"}
+       "End_Time": "the end time", "Category": "the category (Uni, Work, PPI or Social)"}
 DROP = {"never mind", "nevermind", "forget it", "stop", "no"}
 YES = {"yes", "y", "yeah", "yep", "ok", "okay", "confirm"}
 

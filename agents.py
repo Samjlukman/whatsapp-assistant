@@ -16,7 +16,7 @@ class Intake(BaseModel):
     Date: str | None = None
     Time: str | None = None
     End_Time: str | None = None
-    Category: Literal["Uni", "Work", "PPI"] | None = None
+    Category: Literal["Uni", "Work", "PPI", "Social"] | None = None
     Is_Deadline: bool = False
     Target_Ids: list[int] = []
     List_Days: int | None = None
@@ -42,7 +42,8 @@ Fields:
 - Date: YYYY-MM-DD. Look relative dates ("Friday", "tomorrow", "next Monday") up in the calendar below; don't calculate.
 - Time: HH:MM, 24-hour. The start time, or the due time for a deadline.
 - End_Time: HH:MM, 24-hour.
-- Category: Uni (exams, essays, assignments, coursework, any deadline), Work (shifts), PPI (society meetings and events).
+- Category: Uni (exams, essays, assignments, coursework, any deadline), Work (shifts), PPI (anything that mentions PPI,
+  including its socials and sports), Social (sport, club nights, parties and going out that don't mention PPI).
 - Is_Deadline: true for anything "due" (essays, assignments, coursework); its Category is Uni.
 - Target_Ids: for edit or cancel, the ids of the upcoming events below that the user means.
 
@@ -56,7 +57,9 @@ Examples (the ids here are made up; use the real list below):
 - "Shift at Costa {ex_day} 10am to 6pm" -> {{"Intent": "create", "Event_Name": "Shift at Costa", "Date": "{ex_date}", "Time": "10:00", "End_Time": "18:00", "Category": "Work"}}
 - "lab report due tomorrow 9am" -> {{"Intent": "create", "Event_Name": "Lab report", "Date": "{tomorrow}", "Time": "09:00", "Category": "Uni", "Is_Deadline": true}}
 - "push my dentist appointment to 11am" (dentist is #7) -> {{"Intent": "edit", "Time": "11:00", "Target_Ids": [7]}}
-- "badminton social sometime next week at 7" -> {{"Intent": "create", "Event_Name": "Badminton social", "Category": "PPI"}} (no day, no am/pm)
+- "tennis {ex_day} 7-9pm" -> {{"Intent": "create", "Event_Name": "Tennis", "Date": "{ex_date}", "Time": "19:00", "End_Time": "21:00", "Category": "Social"}}
+- "PPI futsal night {ex_day} 6pm to 8pm" -> {{"Intent": "create", "Event_Name": "PPI futsal night", "Date": "{ex_date}", "Time": "18:00", "End_Time": "20:00", "Category": "PPI"}}
+- "badminton social sometime next week at 7" -> {{"Intent": "create", "Event_Name": "Badminton social", "Category": "Social"}} (no day, no am/pm)
 
 Calendar:
 {calendar}

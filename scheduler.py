@@ -27,7 +27,11 @@ def send_whatsapp(text: str) -> None:
                headers={"x-bridge-secret": BRIDGE_SECRET}, timeout=30).raise_for_status()
 
 
-def send_reminder(text: str, attempt: int = 0) -> None:
+def send_reminder(text: str, attempt: int = 0, start: datetime | None = None) -> None:
+    """start is None for jobs queued before reminders carried their event's start time."""
+    if start and datetime.now(TZ) >= start:  # caught up late after downtime, or still retrying
+        log.info("Skipped reminder, the event has already started: %s", text)
+        return
     try:
         send_whatsapp(text)
     except Exception as e:
@@ -36,7 +40,7 @@ def send_reminder(text: str, attempt: int = 0) -> None:
             return
         log.warning("Reminder send failed (%s); retrying in 5 minutes", e)
         scheduler.add_job(send_reminder, "date", run_date=datetime.now(TZ) + timedelta(minutes=5),
-                          args=[text, attempt + 1])
+                          args=[text, attempt + 1], kwargs={"start": start})
 
 
 def at_20(d: date) -> datetime:
@@ -47,6 +51,8 @@ def reminder_times(category: str, start: datetime) -> list[datetime]:
     """start is the event start, or the due time for Uni deadlines."""
     if category == "Uni":
         return [start - timedelta(days=14), at_20(start.date() - timedelta(days=3))]
+    if category == "Social":
+        return [at_20(start.date() - timedelta(days=1)), start - timedelta(hours=2)]
     return [at_20(start.date() - timedelta(days=1))]  # Work and PPI: the night before
 
 
@@ -68,7 +74,7 @@ def schedule_reminders(event_id: int, name: str, category: str, start: datetime)
         if t <= now:
             missed = True
             continue
-        job = scheduler.add_job(send_reminder, "date", run_date=t, args=[text],
+        job = scheduler.add_job(send_reminder, "date", run_date=t, args=[text], kwargs={"start": start},
                                 id=f"event{event_id}-{i}", replace_existing=True)
         job_ids.append(job.id)
         queued.append(t)

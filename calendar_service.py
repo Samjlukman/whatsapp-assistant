@@ -17,7 +17,7 @@ from config import HERE
 SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 CREDENTIALS = HERE / "credentials.json"
 TOKEN = HERE / "token.json"
-COLORS = {"Uni": "9", "Work": "6", "PPI": "10"}  # blueberry, tangerine, basil
+COLORS = {"Uni": "9", "Work": "6", "PPI": "10", "Social": "5"}  # blueberry, tangerine, basil, banana
 
 
 class CalendarError(Exception):
