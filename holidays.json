@@ -1,0 +1,22 @@
+{
+  "note": "Moving dates (Eid, Ramadan, Lunar New Year, Nyepi) are published estimates; check them each year and add the next year's dates before December.",
+  "holidays": [
+    {"name": "Halloween", "date": "2026-10-31"},
+    {"name": "Christmas", "date": "2026-12-25"},
+    {"name": "Lunar New Year", "date": "2027-02-06"},
+    {"name": "Ramadan start", "date": "2027-02-08"},
+    {"name": "Valentine's Day", "date": "2027-02-14"},
+    {"name": "Nyepi", "date": "2027-03-08"},
+    {"name": "Eid al-Fitr", "date": "2027-03-10"},
+    {"name": "Easter", "date": "2027-03-28"},
+    {"name": "Kartini Day", "date": "2027-04-21"},
+    {"name": "Eid al-Adha", "date": "2027-05-17"},
+    {"name": "Indonesian Independence Day", "date": "2027-08-17"},
+    {"name": "Halloween", "date": "2027-10-31"},
+    {"name": "Christmas", "date": "2027-12-25"},
+    {"name": "Lunar New Year", "date": "2028-01-26"},
+    {"name": "Ramadan start", "date": "2028-01-28"},
+    {"name": "Valentine's Day", "date": "2028-02-14"},
+    {"name": "Eid al-Fitr", "date": "2028-02-27"}
+  ]
+}

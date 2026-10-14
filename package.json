@@ -1,0 +1,15 @@
+{
+  "name": "whatsapp-assistant-bridge",
+  "private": true,
+  "main": "whatsapp_bridge.js",
+  "scripts": {
+    "start": "node whatsapp_bridge.js"
+  },
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.34.0"
+  },
+  "allowScripts": {
+    "puppeteer@24.38.0": true
+  }
+}
