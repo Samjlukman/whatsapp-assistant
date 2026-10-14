@@ -7,7 +7,8 @@ Local WhatsApp bot that adds events to Google Calendar and sends reminders. All 
 1. **Shared secret** (both processes read it), in PowerShell:
    `setx BRIDGE_SECRET (-join ((48..57)+(97..122) | Get-Random -Count 32 | % {[char]$_}))`
    then open a new terminal.
-2. **Your number**: edit `OWNER_NUMBER` in `whatsapp_bridge.js` (digits only, with country code, e.g. `447...`).
+2. **Your number**: put it in `owner_number.txt` (digits only, with country code, e.g. `447...`). Git ignores
+   this file, so the number never reaches GitHub.
 3. **Google Calendar**: in Google Cloud Console, enable the Google Calendar API, create an OAuth client of type
    *Desktop app*, download it as `credentials.json` into this folder, then run
    `.\.venv\Scripts\python.exe calendar_service.py` and sign in.
@@ -34,4 +35,4 @@ Ollama must be running (it starts with Windows after install).
 `main.py` (FastAPI + message flow), `agents.py` (Qwen intake), `calendar_service.py`, `scheduler.py`
 (reminder rules + holiday check), `db_models.py`, `whatsapp_bridge.js`, `holidays.json` (update yearly),
 `test_logic.py` (run it after changing date logic). State lives in `assistant.db`; don't commit it,
-`token.json`, `credentials.json` or `.wwebjs_auth/`.
+`token.json`, `credentials.json`, `owner_number.txt` or `.wwebjs_auth/` (all in `.gitignore`).

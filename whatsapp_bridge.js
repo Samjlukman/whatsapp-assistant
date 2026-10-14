@@ -1,16 +1,23 @@
 // WhatsApp <-> FastAPI bridge. Runs on the spare (bot) number via LocalAuth.
+const fs = require('fs');
 const http = require('http');
+const path = require('path');
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 
 // SECURITY: the only number allowed to command the bot and receive messages. Digits only, with country code.
-const OWNER_NUMBER = '447000000000';
+// Kept in owner_number.txt (git-ignored) so the repo never contains it.
+const OWNER_FILE = path.join(__dirname, 'owner_number.txt');
+const OWNER_NUMBER = fs.existsSync(OWNER_FILE) ? fs.readFileSync(OWNER_FILE, 'utf8').trim() : '';
+if (!/^\d{8,15}$/.test(OWNER_NUMBER)) {
+  console.error(`Put your number (digits only, with country code, e.g. 447...) in ${OWNER_FILE}`);
+  process.exit(1);
+}
 const OWNER_CUS = `${OWNER_NUMBER}@c.us`;
 const BACKEND = 'http://127.0.0.1:8000/incoming';
 const PORT = 3001;
 const SECRET = process.env.BRIDGE_SECRET;
 if (!SECRET) { console.error('Set the BRIDGE_SECRET environment variable first.'); process.exit(1); }
-if (OWNER_NUMBER === '447000000000') { console.error('Edit OWNER_NUMBER in whatsapp_bridge.js first.'); process.exit(1); }
 
 const client = new Client({ authStrategy: new LocalAuth() });
 let ready = false;

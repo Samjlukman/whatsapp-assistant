@@ -4,5 +4,6 @@ __pycache__/
 assistant.db
 credentials.json
 token.json
+owner_number.txt
 .wwebjs_auth/
 .wwebjs_cache/
