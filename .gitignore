@@ -7,3 +7,4 @@ token.json
 owner_number.txt
 .wwebjs_auth/
 .wwebjs_cache/
+logs/

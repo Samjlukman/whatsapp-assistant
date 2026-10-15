@@ -23,6 +23,26 @@ npm start
 
 Ollama must be running (it starts with Windows after install).
 
+## Run in the background (starts at logon)
+
+`run_forever.ps1` keeps both running hidden and restarts either if it stops; output goes to `logs\`. Install the
+Startup shortcut once, from this folder:
+
+```
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Startup'))\WhatsApp assistant.lnk")
+$s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"
+$s.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$PWD\run_forever.ps1`""
+$s.WorkingDirectory = "$PWD"; $s.WindowStyle = 7; $s.Save()
+```
+
+Stop it (e.g. to run in terminals, or to re-scan the QR code with `npm start`):
+
+```
+Get-CimInstance Win32_Process | ? CommandLine -like '*-File*run_forever.ps1*' | % { taskkill /PID $_.ProcessId /T /F }
+```
+
+Uninstall: delete `WhatsApp assistant` from the Startup folder (Win+R, `shell:startup`).
+
 ## Use
 
 - `Shift at Tesco Friday 9:00 to 17:00` / `Stats exam 10 Dec 9:30-11:30` / `Essay due 12 Dec 12:00`
@@ -30,9 +50,13 @@ Ollama must be running (it starts with Windows after install).
 - `what's on this week?`
 - `never mind` drops whatever the bot is waiting on.
 
+Every morning at 8:00 the bot sends today's agenda from Google Calendar (main calendar plus Holidays in
+Indonesia), `[Uni]` events in the next 7 days, and any new holiday-planning alerts. If the PC was off at 8:00, it
+goes out once the bot is back that day.
+
 ## Files
 
 `main.py` (FastAPI + message flow), `agents.py` (Qwen intake), `calendar_service.py`, `scheduler.py`
-(reminder rules + holiday check), `db_models.py`, `whatsapp_bridge.js`, `holidays.json` (update yearly),
+(reminder rules + morning recap), `db_models.py`, `whatsapp_bridge.js`, `holidays.json` (update yearly),
 `test_logic.py` (run it after changing date logic). State lives in `assistant.db`; don't commit it,
 `token.json`, `credentials.json`, `owner_number.txt` or `.wwebjs_auth/` (all in `.gitignore`).

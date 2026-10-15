@@ -30,16 +30,19 @@ async function isOwner(msg) {
   if (msg.from === OWNER_CUS) return true;
   // Newer WhatsApp accounts arrive as <id>@lid instead of <number>@c.us; resolve to the real number.
   if (!msg.from.endsWith('@lid')) return false; // groups, broadcasts, everyone else
-  const contact = await msg.getContact();
-  return contact.number === OWNER_NUMBER;
+  // contact.number holds the lid digits for these senders, not the phone number, so ask WhatsApp for the mapping.
+  const [{ pn }] = await client.getContactLidAndPhone([msg.from]);
+  return pn?.split('@')[0] === OWNER_NUMBER;
 }
 
 client.on('message', async (msg) => {
+  let owner = false;
   try {
-    if (!(await isOwner(msg))) return; // drop silently
-  } catch {
-    return;
+    owner = await isOwner(msg);
+  } catch (e) {
+    console.error('Owner check failed:', e);
   }
+  if (!owner) { console.log('Ignored message from', msg.from); return; } // no reply to strangers
   if (msg.type !== 'chat') return; // text only
   let reply;
   try {
